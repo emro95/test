@@ -11,21 +11,24 @@ const WEB_KEY = 'c27070ea51ac4bbb375a5ecf9917ac6bf26f5437';
 
 app.get('/api/carriers', async (req, res) => {
     try {
-        const { dot, legalName, rows, page } = req.query;
+        const { dot, legalName, mc, phyCity, phyState, phyCountry, statusCode, rows, page } = req.query;
         let url = FMCSA_BASE;
         let params = { webKey: WEB_KEY };
 
-        if (legalName) {
-            // Direct search by company name
-            url += `/name/${legalName}`;
+        if (mc) {
+            url += `/mcnumber/${mc}`;
         } else if (dot) {
-            // For DOT, fallback: do a paginated search and filter results (no direct usdot endpoint)
-            url += `?webKey=${WEB_KEY}&rows=10&page=1&dotNumber=${dot}`;
-            params = {}; // already included in URL
+            url += `/id/${dot}`;
+        } else if (legalName) {
+            url += `/name/${legalName}`;
         } else {
-            // Default: paginated list
+            // Default: paginated list, supports city, state, country, statusCode
             url += `?webKey=${WEB_KEY}&rows=${rows || 10}&page=${page || 1}`;
-            params = {}; // already included in URL
+            params = {};
+            if (phyCity) url += `&phyCity=${phyCity}`;
+            if (phyState) url += `&phyState=${phyState}`;
+            if (phyCountry) url += `&phyCountry=${phyCountry}`;
+            if (statusCode) url += `&statusCode=${statusCode}`;
         }
 
         const response = await axios.get(url, { params });
@@ -41,5 +44,5 @@ app.get('/api/carriers', async (req, res) => {
     }
 });
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Proxy server running on http://localhost:${PORT}`));
